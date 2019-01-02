@@ -1,14 +1,16 @@
-function a = check_and_remove_crc_bits(b, G_P)
+function a = check_and_remove_crc_bits(b, G_max)
 % CHECK_AND_REMOVE_CRC_BITS checks and removes Cyclic Redudancy Check
 % (CRC) bits that have been appended to an information bit sequence.
-%   a = CHECK_AND_REMOVE_CRC_BITS(b, G_P) uses a specified generator
+%   a = CHECK_AND_REMOVE_CRC_BITS(b, G_max) uses a specified generator
 %   matrix to check the CRC bits appended to an information bit sequence
 %   and removes them if the check is successful.
 %
 %   b should be a row vector comprising B = A+L bits, where A is the number
 %   of information bits and L is the number of appended CRC bits.
 %
-%   G_P should be an A by L binary generator matrix for the CRC.
+%   G_max should be a binary generator matrix for the CRC. The number of
+%   rows in G_max should be at least A, while the number of columns in
+%   G_max should equal the number of CRC bits to be generated.
 %
 %   If the CRC check is successful, then a will be a row vector comprising
 %   the A information bits. If the CRC check is unsuccessful, then a will
@@ -24,7 +26,7 @@ function a = check_and_remove_crc_bits(b, G_P)
 % more details.
 
 B = length(b);
-L = size(G_P,2);
+L = size(G_max,2);
 A = B-L;
 
 % Extract the information and CRC bits
@@ -32,7 +34,7 @@ a = b(1:A);
 p = b(A+1:A+L);
 
 % Recalculate the CRC bits
-p2 = mod(a*G_P,2);
+p2 = calculate_crc_bits(a, G_max);
 
 % Check the CRC bits and reset a if the check fails
 if ~isequal(p,p2)
