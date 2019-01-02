@@ -1,9 +1,8 @@
-function b = generate_and_append_crc_bits(a, G_max)
-% GENERATE_AND_APPEND_CRC_BITS generates and appends Cyclic Redudancy Check
-% (CRC) bits to an information bit sequence.
-%   b = GENERATE_AND_APPEND_CRC_BITS(a, G_max) uses a specified generator
-%   matrix to generate CRC bits for an information bit sequence and appends
-%   them.
+function p = calculate_crc_bits(a,G_max)
+% CALCULATE_CRC_BITS calculates Cyclic Redudancy Check (CRC) bits for a
+% specified information bit sequence.
+%   b = CALCULATE_CRC_BITS(a, G_max) uses a specified generator
+%   matrix to calculate CRC bits for a specified information bit sequence.
 %
 %   a should be a row vector comprising A information bits.
 %
@@ -11,9 +10,7 @@ function b = generate_and_append_crc_bits(a, G_max)
 %   rows in G_max should be at least A, while the number of columns in
 %   G_max should equal the number of CRC bits to be generated.
 %
-%   b will be a row vector comprising B=A+L bits, formed by appending the
-%   sequence of L CRC bits onto the end of the sequence of A information
-%   bits.
+%   p will be a row vector comprising L CRC bits.
 %
 % Copyright © 2018 Robert G. Maunder. This program is free software: you 
 % can redistribute it and/or modify it under the terms of the GNU General 
@@ -24,19 +21,6 @@ function b = generate_and_append_crc_bits(a, G_max)
 % FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
 % more details.
 
-A = length(a);
-L = size(G_max,2);
-B = A+L;
+G = G_max(end-length(a)+1:end,:);
 
-% Calculate the CRC bits
-p = calculate_crc_bits(a,G_max);
-
-% Implemented according to Section 5.1.1 of TS36.212
-b = zeros(1,B);
-for k = 0:A-1
-    b(k+1) = a(k+1);
-end
-for k=A:A+L-1
-    b(k+1) = p(k-A+1);
-end
-    
+p = mod(a*G,2);
