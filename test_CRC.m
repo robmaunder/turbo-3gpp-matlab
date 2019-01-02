@@ -14,17 +14,18 @@ while 1
         error('Something has gone wrong');
     end
     A = randi(6144);
+    A2 = randi(A);
     
     erroneous = round(rand);
     
-    fprintf('%s %d %d\n',CRC,A,erroneous);
+    fprintf('%s %d %d %d\n',CRC,A,A2,erroneous);
     
     
     crc_polynomial = get_3gpp_crc_polynomial(CRC);
     
     G_P = get_crc_generator_matrix(A, crc_polynomial);
     
-    a = round(rand(1,A));
+    a = round(rand(1,A2));
     
     b = generate_and_append_crc_bits(a, G_P);
     
