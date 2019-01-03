@@ -40,13 +40,13 @@ function x_e = constituent_decoder2(x_a, z_a)
     state_count = max(max(transitions(:,1)),max(transitions(:,2)));
 
     % Calculate the a priori transition log-probabilities
-    gammas_uncoded = zeros(size(transitions,1),length(x_a));
-    gammas_uncoded(transitions(:,3)==0,:) = repmat(x_a, sum(transitions(:,3)==0),1);
+    gammas_x = zeros(size(transitions,1),length(x_a));
+    gammas_x(transitions(:,3)==1,:) = repmat(-x_a, sum(transitions(:,3)==1),1);
     
-    gammas_encoded = zeros(size(transitions,1),length(x_a));
-    gammas_encoded(transitions(:,4)==0,:) = repmat(z_a, sum(transitions(:,4)==0),1);
+    gammas_z = zeros(size(transitions,1),length(z_a));
+    gammas_z(transitions(:,4)==1,:) = repmat(-z_a, sum(transitions(:,4)==1),1);
     
-    gammas = gammas_uncoded + gammas_encoded;
+    gammas = gammas_x + gammas_z;
     
     % Recursion to calculate forward state log-probabilities
     alphas=zeros(state_count,length(x_a));
@@ -69,8 +69,8 @@ function x_e = constituent_decoder2(x_a, z_a)
     end
 
     % Calculate a posteriori transition log-probabilities
-    deltas = alphas(transitions(:,1),:) + betas(transitions(:,2),:) + gammas_encoded;
-    
+    deltas = alphas(transitions(:,1),:) + betas(transitions(:,2),:) + gammas_z;
+      
     % Calculate the uncoded extrinsic LLRs
     log_p0=maxstar(deltas(transitions(:,3) == 0,:));
     log_p1=maxstar(deltas(transitions(:,3) == 1,:));
