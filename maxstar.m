@@ -1,4 +1,24 @@
 function c = maxstar(a,b)
+% MAXSTAR    Jacobian logarithm.
+%   c = MAXSTAR(a,b) outputs a matrix c, obtained as an element-wise
+%   Jacobian logarithm of the elements of the matrices a and b, which are
+%   required to have the same dimensions.
+%
+%   c = MAXSTAR(a) outputs a row vector c, where each element is obtained
+%   as the Jacobian logarithm of the elements in the corresponding column
+%   of the matrix a.
+%
+%   If the global variable approx_star is set to true, then MAXSTAR behaves
+%   as MAX.
+%
+% Copyright © 2018 Robert G. Maunder. This program is free software: you 
+% can redistribute it and/or modify it under the terms of the GNU General 
+% Public License as published by the Free Software Foundation, either 
+% version 3 of the License, or (at your option) any later version. This 
+% program is distributed in the hope that it will be useful, but WITHOUT 
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+% FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
+% more details.
 
 global approx_star;
 

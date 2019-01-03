@@ -24,7 +24,7 @@ function d = turbo_encoder(c, pi)
 K = length(c);
 
 if length(pi) ~= K
-    error('pi has a different length to c');
+    error('length of pi does not match K');
 end
 
 filler_bits = find(isnan(c));

@@ -1,13 +1,30 @@
-% BCJR algorithm for a terminated unity-rate recursive convolutional code
-% having 3 memory elements, a generator polynomial of [1,1,0,1] and a feedback
-% polynomial of [1,0,1,1]. This is as used in the LTE turbo code, as specified in ETSI TS 136 212.
-% Copyright (C) 2016  Robert G. Maunder
-
-
-% apriori_uncoded_llrs is a 1x(N+3) vector of a priori uncoded LLRs
-% apriori_encoded_llrs is a 1x(N+3) vector of a priori encoded LLRs
-% extrinsic_uncoded_llrs is a 1x(N+3) vector of extrinsic encoded LLRs
-function x_e = constituent_decoder2(x_a, z_a)
+function x_e = constituent_decoder(x_a, z_a)
+% CONSTITUENT_DECODER Log-BCJR decodes a code block using a terminated unity-rate
+% recursive convolutional code having 3 memory elements, a generator
+% polynomial of [1,1,0,1] and a feedback polynomial of [1,0,1,1], as
+% specified in Section 5.1.3.2.1 and 5.1.3.2.2 of TS36.212.
+%   x_e = CONSTITUENT_DECODER(x_a, z_a) decodes a code block by combining a
+%   sequence of a priori systematic Logarithmic Likelihood Ratios (LLRs)
+%   with a sequence of a priori encoded LLRs, in order to obtain a sequence
+%   of extrinsic systematic LLRs. LLRs should be expressed in the form
+%   LLR = ln[Pr(bit = 0)/Pr(bit = 1)].
+%
+%   x_a should be a row vector, comprising K+3 a priori systematic and
+%   termination LLRs.
+%
+%   z_a should be a row vector, comprising K+3 a priori encoded LLRs.
+%
+%   x_e will be a row vector, comprising K+3 extrinsic systematic and
+%   termination LLRs.
+%
+% Copyright © 2018 Robert G. Maunder. This program is free software: you
+% can redistribute it and/or modify it under the terms of the GNU General
+% Public License as published by the Free Software Foundation, either
+% version 3 of the License, or (at your option) any later version. This
+% program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+% FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+% more details.
 
     if(length(x_a) ~= length(z_a))
         error('LLR sequences must have the same length');
@@ -17,7 +34,7 @@ function x_e = constituent_decoder2(x_a, z_a)
     % Each row describes one transition in the trellis
     % Each state is allocated an index 1,2,3,... Note that this list starts 
     % from 1 rather than 0.
-    %               FromState,  ToState,    UncodedBit, EncodedBit
+    %               FromState,  ToState,    x,          z
     transitions =  [1,          1,          0,          0; 
                     2,          5,          0,          0; 
                     3,          6,          0,          1; 
