@@ -18,7 +18,13 @@ function [c, iterations_performed] = turbo_decoder(d_a, pi, max_iterations, G_ma
 %
 %   max_iterations specifies the number of iterations to peform when early
 %   termination is disabled, or specifies the maximum number of iterations
-%   to perform when early termination is enabled.
+%   to perform when early termination is enabled. max_iterations should be
+%   a multiple of 0.5, which allows an odd number of half iterations to be
+%   performed.
+%
+%   G_max should be a binary generator matrix for the CRC. The number of
+%   rows in G_max should be at least max(K), while the number of columns
+%   in G_max should equal the number of CRC bits in the code block.
 %
 %   c will be a row vector, comprising the K decoded bits of a code block.
 %   Note that even when employing early termination, c is not guaranteed to
@@ -77,7 +83,7 @@ z_prime_a(K+2) = d_a(1,K+4);
 x_prime_a(K+3) = d_a(2,K+4);
 z_prime_a(K+3) = d_a(3,K+4);
 
-c = d_a(1:K) < 0; % a posteriori hard decision
+c = double(d_a(1:K) < 0); % a posteriori hard decision
 if nargin == 4
     p = calculate_crc_bits(c,G_max);
     if sum(p) == 0
@@ -93,7 +99,7 @@ for iteration_index = 1:ceil(max_iterations)
     x_a(1:K) = c_a + d_a(1,1:K); % Systematic a priori
     x_e = constituent_decoder(x_a, z_a); % Upper decoder
     c_e = x_e(1:K) + d_a(1,1:K); % Systematic a priori
-    c = (c_a + c_e) < 0; % a posteriori hard decision
+    c = double((c_a + c_e) < 0); % a posteriori hard decision
 
     if nargin == 4
         p = calculate_crc_bits(c,G_max);
@@ -108,7 +114,7 @@ for iteration_index = 1:ceil(max_iterations)
         x_prime_a(1:K) = c_e(pi+1); % Interleaver
         x_prime_e = constituent_decoder(x_prime_a, z_prime_a); % Lower decoder
         c_a(pi+1) = x_prime_e(1:K); % Deinterleaver        
-        c = (c_a + c_e) < 0; % a posteriori hard decision
+        c = double((c_a + c_e) < 0); % a posteriori hard decision
         
         if nargin == 4
             p = calculate_crc_bits(c,G_max);
