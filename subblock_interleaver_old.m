@@ -1,4 +1,4 @@
-function v = subblock_interleaver(d,superscript)
+function v = subblock_interleaver_old(d,superscript)
 
 D = length(d);
 

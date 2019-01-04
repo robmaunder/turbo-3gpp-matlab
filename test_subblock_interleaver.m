@@ -8,7 +8,7 @@ while 1
     
     fprintf('%d %d\n',D,subblock_interleaver_index);
     
-    v1 = subblock_interleaver(d,subblock_interleaver_index);
+    v1 = subblock_interleaver_old(d,subblock_interleaver_index);
     
     pi = get_3gpp_subblock_interleaver(D,subblock_interleaver_index);
     
