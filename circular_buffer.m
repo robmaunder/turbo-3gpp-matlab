@@ -1,10 +1,39 @@
 function e = circular_buffer(v, N_ref, I_LBRM, rv_idx, E)
-% I_LBRM should be set to 0 for UL-SCH, MCH, SL-SCH and SL-DCH transport
-% channels, as well as for UE category 0 for DL-SCH associated with SI-RNTI
-% and RA-RNTI and PCH transport channel. Otherwise, I_LBRM should be set to
-% a value other than 0 for DL-SCH and PCH transport channels.
+% CIRCULAR_BUFFER performs circular buffering, as specified in Section
+% 5.1.4.1.2 of TS36.212.
+%   e = CIRCULAR_BUFFER(v, N_ref, I_LBRM, rv_idx, E) circular buffers
+%   interleaves a specified bit matrix, using various specified parameters.
 %
-% N_ref should be set to floor(N_IR/C).
+%   v should be a matrix comprising 3 rows and K_Pi columns, filler bits to
+%   be punctured should be indicated by NaN-valued elements.
+%
+%   N_ref should be set to floor(N_IR/C), as described in Section 5.1.4.1.2
+%   of TS36.212.
+%
+%   I_LBRM should be set to 0 for UL-SCH, MCH, SL-SCH and SL-DCH transport
+%   channels, as well as for UE category 0 for DL-SCH associated with
+%   SI-RNTI and RA-RNTI and PCH transport channel. Otherwise, I_LBRM should
+%   be set to a value other than 0 for DL-SCH and PCH transport channels,
+%   as described in Section 5.1.4.1.2 of TS36.212.
+%
+%   rv_idx specifies the redundancy version, which should be selected from
+%   the set 0, 1, 2 or 3, as described in Section 5.1.4.1.2 of TS36.212.
+%   
+%   E specifies the encoded block length.
+%   
+%   e will be a row vector of length E.
+%
+% Copyright © 2018 Robert G. Maunder. This program is free software: you
+% can redistribute it and/or modify it under the terms of the GNU General
+% Public License as published by the Free Software Foundation, either
+% version 3 of the License, or (at your option) any later version. This
+% program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+% FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+% more details.
+
+
+
 
 C_TC_subblock = 32;
 K_Pi = size(v,2);

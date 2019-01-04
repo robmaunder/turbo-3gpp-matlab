@@ -1,9 +1,9 @@
 function v = subblock_interleaver(d, subblock_interleaver_index)
-% GET_3GPP_SUBBLOCK_INTERLEAVER obtains the subblock interleaver pattern, as
+% SUBBLOCK_INTERLEAVER performs subblock interleaving, as
 % specified in Section 5.1.4.1.1 of TS36.212.
-%   v = GET_3GPP_SUBBLOCK_INTERLEAVER(d,
-%   subblock_interleaver_index) obtains the interleaver pattern for a
-%   specified block length and a specified subblock interleaver index.
+%   v = SUBBLOCK_INTERLEAVER(d, subblock_interleaver_index) subblock
+%   interleaves a specified bit sequence, using a specified subblock
+%   interleaver index.
 %
 %   d should be a row vector of length D, to be interleaved.
 %
@@ -12,12 +12,14 @@ function v = subblock_interleaver(d, subblock_interleaver_index)
 %
 %   v will be a row vector of length K_Pi, containing the D elements of d,
 %   as well as K_Pi-D NaNs, arranged according to the subblock interleaver
-%   pattern. Interleaving can also be achieved according to
+%   pattern. 
+%
+%   A subblock interleaver pattern can be obtained according to
 %       pi = subblock_interleaver(0:D-1, subblock_interleaver_index);
+%   Using this, interleaving can be achieved according to
 %       v = NaN(size(pi));
 %       v(~isnan(pi)) = d(pi(~isnan(pi))+1);
 %   Deinterleaving can be achieved according to
-%       pi = subblock_interleaver(0:D-1, subblock_interleaver_index);
 %       d = zeros(1,D);
 %       d(pi(~isnan(pi))+1) = v(~isnan(pi));
 %
