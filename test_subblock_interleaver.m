@@ -9,8 +9,9 @@ while 1
     fprintf('%d %d\n',D,subblock_interleaver_index);
     
     v1 = subblock_interleaver_old(d,subblock_interleaver_index);
+   
     
-    pi = get_3gpp_subblock_interleaver(D,subblock_interleaver_index);
+    pi = subblock_interleaver(0:D-1, subblock_interleaver_index);
     
     v2 = zeros(size(pi));
     v2(~isnan(pi)) = d(pi(~isnan(pi))+1);
