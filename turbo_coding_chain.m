@@ -1,16 +1,16 @@
 %NRLDPC Base class for 3GPP New Radio LDPC objects
-%   This base class cannot be used to perform the processing of any LDPC 
-%   coding, but it can be used to setup all LDPC coding parameters. This 
-%   may be inherited by derived classes that can perform the processing of 
+%   This base class cannot be used to perform the processing of any LDPC
+%   coding, but it can be used to setup all LDPC coding parameters. This
+%   may be inherited by derived classes that can perform the processing of
 %   LDPC coding.
 %
-%   Copyright © 2018 Robert G. Maunder. This program is free software: you 
-%   can redistribute it and/or modify it under the terms of the GNU General 
-%   Public License as published by the Free Software Foundation, either 
-%   version 3 of the License, or (at your option) any later version. This 
-%   program is distributed in the hope that it will be useful, but WITHOUT 
-%   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-%   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+%   Copyright © 2018 Robert G. Maunder. This program is free software: you
+%   can redistribute it and/or modify it under the terms of the GNU General
+%   Public License as published by the Free Software Foundation, either
+%   version 3 of the License, or (at your option) any later version. This
+%   program is distributed in the hope that it will be useful, but WITHOUT
+%   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+%   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 %   for more details.
 classdef turbo_coding_chain < matlab.System
     
@@ -24,9 +24,9 @@ classdef turbo_coding_chain < matlab.System
         %   long enough to be decomposed into two or more code blocks, then the
         %   number of information bits in the transport block is given by A, as
         %   defined in Sections 6.2.1 and 6.3.1 of TS38.212. If we are considering
-        %   one of the code blocks within a transport block that is long enough to 
-        %   be decomposed into two or more code blocks, then the number of 
-        %   information bits in the code block is given by K'-L, as defined in 
+        %   one of the code blocks within a transport block that is long enough to
+        %   be decomposed into two or more code blocks, then the number of
+        %   information bits in the code block is given by K'-L, as defined in
         %   Section 5.2.2 of TS38.212.
         A = 16; % Default value
         
@@ -36,21 +36,21 @@ classdef turbo_coding_chain < matlab.System
         %   of TS38.212. A full buffer is used if I_LBRM = 0 and a limited buffer
         %   is used otherwise.
         I_LBRM = 0; % Default value
-    
+        
         N_IR = inf; % Default value
     end
-
-    % Tunable properties can be changed anytime, even after the step 
+    
+    % Tunable properties can be changed anytime, even after the step
     % function has been called.
     properties
         
-        %RV_ID Redundancy version number 
+        %RV_ID Redundancy version number
         %   Specifies the redundancy version number, as defined in Section 5.4.2.1
         %   of TS38.212. rv_idx is tunable so that it can be changed for successive
         %   retransmissions during HARQ.
         rv_idx = 0; % Default value
         
-        %E Number of encoded bits        
+        %E Number of encoded bits
         %   Specifies the number of encoded bits in the output bit sequence after
         %   rate matching, as defined in Section 5.4.2.1 of TS38.212. E is tunable
         %   so that it can be changed for successive retransmissions during HARQ.
@@ -60,13 +60,13 @@ classdef turbo_coding_chain < matlab.System
         
         Q_m = 1; % Default value
     end
-  
+    
     % Protected dependent properties cannot be set manually. Instead, they
-    % are calculated automatically as functions of the non-dependent 
+    % are calculated automatically as functions of the non-dependent
     % properties.
     properties(Dependent, SetAccess = protected)
         
-        %CRCPOLYNOMIAL Cyclic Redundancy Check (CRC) polynomial 
+        %CRCPOLYNOMIAL Cyclic Redundancy Check (CRC) polynomial
         %   Specifies the polynomial used when appending a CRC to the information
         %   bits, as defined in Section 5.1 of TS38.212.
         CRC_polynomial_TB
@@ -79,10 +79,16 @@ classdef turbo_coding_chain < matlab.System
         
         C
         
+        B_prime
+        
         K_r
-
+        
+        F_r
+        
+        D_r
+        
         E_r
-               
+        
         %N_REF Circular buffer limit
         %   Specifies limit imposed upon the lenghth of the circular buffer used
         %   for rate matching, when I_LBRM is non-zero, as defined in Section
@@ -94,16 +100,16 @@ classdef turbo_coding_chain < matlab.System
     properties(SetAccess = protected, Hidden)
         CRC_generator_matrix_TB
         CRC_generator_matrix_CB
-
-        internal_interleaver_pattern
         
-        rate_matching_pattern   
+        internal_interleaver_patterns
+        
+        rate_matching_patterns
     end
     
     
-     
     
-    % Methods used to set and get the values of properties. 
+    
+    % Methods used to set and get the values of properties.
     methods
         
         % Constructor allowing properties to be set according to e.g.
@@ -111,7 +117,7 @@ classdef turbo_coding_chain < matlab.System
         function obj = turbo_coding_chain(varargin)
             setProperties(obj,nargin,varargin{:});
         end
-               
+        
         function set.A(obj, A)
             if A < 0
                 error('A should not be negative.');
@@ -184,8 +190,21 @@ classdef turbo_coding_chain < matlab.System
             C = length(obj.K_r);
         end
         
+        function B_prime = get.B_prime(obj)
+            B_prime = obj.B+obj.C*obj.L_CB;
+        end
+        
         function K_r = get.K_r(obj)
             K_r = get_3gpp_code_block_segment_lengths(obj.B);
+        end
+
+        function F_r = get.F_r(obj)
+            F_r = zeros(1,obj.C);            
+            F_r(1) = sum(obj.K_r) - obj.B_prime;
+        end        
+        
+        function D_r = get.D_r(obj)
+            D_r = obj.K_r+4;
         end
         
         function E_r = get.E_r(obj)
@@ -195,5 +214,59 @@ classdef turbo_coding_chain < matlab.System
         function N_ref = get.N_ref(obj)
             N_ref = floor(obj.N_IR/obj.C);
         end
+    end
+    
+    % Methods used to execute processing.
+    methods(Access = protected)
+        
+        % Code executed on the first time that the step function is called,
+        % or the first time after the release function is called. e.g.
+        % a = turbo_coding_chain;
+        % step(a); % <- setupImpl executed here
+        % step(a); % <- setupImpl not executed here
+        % reset(a);
+        % step(a); % <- setupImpl not executed here
+        % release(a);
+        % step(a); % <- setupImpl executed here
+        function setupImpl(obj)
+            
+            obj.CRC_generator_matrix_TB = get_crc_generator_matrix(obj.A, obj.CRC_polynomial_TB);
+            
+            if obj.C > 1
+                obj.CRC_generator_matrix_CB = get_crc_generator_matrix(6144, obj.CRC_polynomial_CB);
+            end
+            
+            obj.internal_interleaver_patterns = cell(1,obj.C);
+            for r = 0:obj.C-1
+                obj.internal_interleaver_patterns{r+1} = internal_interleaver(0:obj.K_r(r+1)-1);
+            end
+            
+            obj.processTunedPropertiesImpl;
+        end
+        
+        
+        function processTunedPropertiesImpl(obj)
+            obj.rate_matching_patterns = cell(1,obj.C);
+            for r = 0:obj.C-1
+                d = reshape(0:3*obj.D_r(r+1)-1,3,obj.D_r(r+1));
+                d(1:2,1:obj.F_r(r+1)) = NaN;
+                obj.rate_matching_patterns{r+1} = rate_matching(d, obj.N_ref, obj.I_LBRM, obj.rv_idx, obj.E_r(r+1));
+            end
+        end
+        
+        % Code executed by the step function. e.g.
+        % a = turbo_coding_chain;
+        % step(a); % <- stepImpl executed here
+        % step(a); % <- stepImpl executed here
+        % reset(a);
+        % step(a); % <- stepImpl executed here
+        % release(a);
+        % step(a); % <- stepImpl executed here
+        function e = stepImpl(obj, a)
+            e = a;
+        end
+       
+        
+        
     end
 end

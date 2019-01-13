@@ -66,7 +66,7 @@ elseif subblock_interleaver_index == 2
     for k = 0:K_Pi-1    
         pi(k+1) = mod(P(floor(k/R_TC_subblock)+1)+C_TC_subblock*mod(k,R_TC_subblock)+1,K_Pi);
     end
-     v = y(pi+1);
+    v = y(pi+1);
 else
     error('Unsupported subblock_interleaver_index');
 end
