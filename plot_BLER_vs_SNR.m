@@ -8,6 +8,14 @@ function plot_BLER_vs_SNR(A, R, rv_idx_sequence, max_iterations, approx_maxstar,
 %   bits in each set of simulated information bit sequences, before CRC and
 %   other redundant bits are included.
 %
+%   R should be a real row vector. Each element specifies a coding rate to
+%   simulate.
+%
+%   rv_idx_sequence should be an integer row vector. Each element should be
+%   in the range 0 to 3. The length of the vector corresponds to the
+%   maximum number of retransmissions to attempt. Each element specifies
+%   the rv_idx to use for the corresponding retransmission.
+%   
 %   max_iterations should be a row vector. Each element specifies a
 %   different maximum number of iterations to characterise the BLER for.
 %   The elements should be multiples of 0.5, which allows an odd number of
@@ -58,12 +66,12 @@ if nargin == 0
     A = 40;
     R = 40/132;
     rv_idx_sequence = [0];
-    max_iterations = 8;
-    approx_maxstar = false;
+    max_iterations = 0:0.5:8;
+    approx_maxstar = true;
     target_block_errors = 10;
     target_BLER = 1e-3;
-    EsN0_start = -2;
-    EsN0_delta = 0.1;
+    EsN0_start = -10;
+    EsN0_delta = 0.5;
     seed = 0;
 end
 
@@ -73,24 +81,32 @@ rng(seed);
 global approx_star;
 approx_star = approx_maxstar;
 
+max_iterations = unique(max_iterations);
+
 for R_index = 1:length(R)
-    
-    % Create a figure to plot the results.
-    figure
-    axes1 = axes('YScale','log');
-    title(['3GPP LTE Turbo code, R = ',num2str(R(R_index)),', QPSK, AWGN, iterations = ',num2str(max_iterations),', errors = ',num2str(target_block_errors)]);
-    ylabel('BLER');
-    xlabel('E_s/N_0 [dB]');
-    ylim([target_BLER,1]);
-    hold on
-    drawnow
-    
+        
     % Consider each information block length in turn
     for A_index = 1:length(A)
+
+        % Create a figure to plot the results.
+        figure
+        axes1 = axes('YScale','log');
+        title(['3GPP LTE Turbo code, A = ',num2str(A(A_index)),', R = ',num2str(R(R_index)),', RVs = ',num2str(length(rv_idx_sequence)),', approx = ',num2str(approx_maxstar),', QPSK, AWGN, errors = ',num2str(target_block_errors)]);
+        ylabel('BLER');
+        xlabel('E_s/N_0 [dB]');
+        ylim([target_BLER,1]);
+        hold on
+        drawnow
         
-        % Create the plot
-        plot1 = plot(nan,'Parent',axes1);
-        legend(cellstr(num2str(A(1:A_index)', 'A=%d')),'Location','southwest');
+
+        plots = zeros(size(max_iterations));
+        % Consider each encoded block length in turn
+        for max_iterations_index = 1:length(max_iterations)
+            % Create the plot
+            plots(max_iterations_index) = plot(nan,'Parent',axes1);
+        end
+        legend(cellstr(num2str(max_iterations', '%0.1f its')),'Location','southwest');
+        drawnow
         
         % Counters to store the number of bits and errors simulated so far
         block_counts=[];
@@ -98,12 +114,18 @@ for R_index = 1:length(R)
         EsN0s = [];
         
         % Open a file to save the results into.
-        filename = ['results/BLER_vs_SNR_',num2str(A(A_index)),'_',num2str(R(R_index)),'_',num2str(max_iterations),'_',num2str(target_block_errors),'_',num2str(EsN0_start),'_',num2str(seed)];
+        filename = ['results/BLER_vs_SNR_',num2str(A(A_index)),'_',num2str(R(R_index)),'_',num2str(length(rv_idx_sequence)),'_',num2str(approx_maxstar),'_',num2str(target_block_errors),'_',num2str(EsN0_start),'_',num2str(seed)];
         fid = fopen([filename,'.txt'],'w');
         if fid == -1
             error('Could not open %s.txt',filename);
         end
-        
+        fprintf(fid, '#Es/N0\tBLER after iteration\n#dB');
+        for max_iterations_index = 1:length(max_iterations)
+            fprintf(fid,'\t%0.1f',max_iterations(max_iterations_index));
+        end
+        fprintf(fid,'\n');
+
+                            
         % Initialise the BLER and SNR
         BLER = 1;
         EsN0 = EsN0_start;
@@ -116,8 +138,8 @@ for R_index = 1:length(R)
             G = round(A(A_index)/R(R_index));
             
             
-            hEnc = turbo_encoding_chain('A',A,'G',G,'Q_m',2);
-            hDec = turbo_decoding_chain('A',A,'G',G,'Q_m',2,'I_HARQ',1,'iterations',max_iterations);
+            hEnc = turbo_encoding_chain('A',A(A_index),'G',G,'Q_m',2);
+            hDec = turbo_decoding_chain('A',A(A_index),'G',G,'Q_m',2,'I_HARQ',1,'iterations',max(max_iterations));
                         
             
             % Loop over the SNRs
@@ -127,15 +149,15 @@ for R_index = 1:length(R)
                  
                 % Start new counters
                 block_counts(end+1) = 0;
-                block_error_counts(end+1) = 0;
+                block_error_counts(:,end+1) = zeros(length(max_iterations),1);
                 EsN0s(end+1) = EsN0;
                 
                 keep_going = true;
                 
                 % Continue the simulation until enough block errors have been simulated
-                while keep_going && block_error_counts(end) < target_block_errors
+                while keep_going && block_error_counts(end,end) < target_block_errors
                     
-                    a = round(rand(1,hEnc.A));
+                    a = round(rand(1,A(A_index)));
                     
                     a_hat = [];
                     rv_idx_index = 1;
@@ -162,7 +184,7 @@ for R_index = 1:length(R)
                         f_tilde = f2_tilde(1:length(f));
                         
                         
-                        a_hat = hDec(f_tilde);
+                        [a_hat, iterations_performed] = hDec(f_tilde);
                         
                         rv_idx_index = rv_idx_index + 1;
                     end
@@ -173,9 +195,12 @@ for R_index = 1:length(R)
                     else
                         found_start = true;
                         
+
                         % Determine if we have a block error
                         if ~isequal(a,a_hat)
-                            block_error_counts(end) = block_error_counts(end) + 1;
+                            block_error_counts(:,end) = block_error_counts(:,end) + 1;
+                        else
+                            block_error_counts(max_iterations < max(iterations_performed),end) = block_error_counts(max_iterations < max(iterations_performed),end) + 1;
                         end
                         
                         % Accumulate the number of blocks that have been simulated
@@ -183,17 +208,23 @@ for R_index = 1:length(R)
                         block_counts(end) = block_counts(end) + 1;
                         
                         % Calculate the BLER and save it in the file
-                        BLER = block_error_counts(end)/block_counts(end);
+                        BLER = block_error_counts(end,end)/block_counts(end);
                         
                         % Plot the BLER vs SNR results
-                        set(plot1,'XData',EsN0s);
-                        set(plot1,'YData',block_error_counts./block_counts);
+                        for max_iterations_index = 1:length(max_iterations)
+                            set(plots(max_iterations_index),'XData',EsN0s);
+                            set(plots(max_iterations_index),'YData',block_error_counts(max_iterations_index,:)./block_counts);
+                        end                        
                         drawnow
                     end
                 end
-                
+                                              
                 if BLER < 1
-                    fprintf(fid,'%f\t%e\n',EsN0,BLER);
+                    fprintf(fid, '%f',EsN0);
+                    for max_iterations_index = 1:length(max_iterations)
+                        fprintf(fid,'\t%e',block_error_counts(max_iterations_index,end)/block_counts(end));
+                    end
+                    fprintf(fid,'\n');
                 end
                 
                 % Update the SNR, ready for the next loop

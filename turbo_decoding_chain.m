@@ -71,10 +71,11 @@ classdef turbo_decoding_chain < turbo_coding_chain
             end
         end
         
-        function a = stepImpl(obj, f)
+        function [a, iterations_performed] = stepImpl(obj, f)
             
             e_r = code_block_deconcatenation(f, obj.E_r);
             
+            iterations_performed = zeros(1,obj.C);
             c_r = cell(1, obj.C);
             for r = 0:obj.C-1
                 
@@ -90,10 +91,10 @@ classdef turbo_decoding_chain < turbo_coding_chain
                 if obj.I_HARQ == 0
                     if obj.C > 1
                         % Use the code block CRC for early termination
-                        c_r{r+1} = turbo_decoder(d, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_CB);
+                        [c_r{r+1},iterations_performed(r+1)] = turbo_decoder(d, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_CB);
                     else
                         % Use the transport block CRC for early termination
-                        c_r{r+1} = turbo_decoder(d, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_TB);
+                        [c_r{r+1},iterations_performed(r+1)] = turbo_decoder(d, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_TB);
                     end
                 else
                     % Accumulate the HARQ buffer
@@ -101,10 +102,10 @@ classdef turbo_decoding_chain < turbo_coding_chain
                                        
                     if obj.C > 1
                         % Use the code block CRC for early termination
-                        c_r{r+1} = turbo_decoder(obj.buffers{r+1}, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_CB);
+                        [c_r{r+1},iterations_performed(r+1)] = turbo_decoder(obj.buffers{r+1}, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_CB);
                     else
                         % Use the transport block CRC for early termination
-                        c_r{r+1} = turbo_decoder(obj.buffers{r+1}, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_TB);
+                        [c_r{r+1},iterations_performed(r+1)] = turbo_decoder(obj.buffers{r+1}, obj.internal_interleaver_patterns{r+1}, obj.iterations, obj.CRC_generator_matrix_TB);
                     end
                 end
             end

@@ -1,2 +1,3 @@
 *.m~
 *.txt
+.DS_Store
