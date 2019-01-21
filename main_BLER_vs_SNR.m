@@ -65,6 +65,9 @@ if nargin == 0
     seed = 0;
 end
 
+global approx_star;
+approx_star = approx_maxstar;
+
 max_iterations = sort(max_iterations);
 
 % Seed the random number generator

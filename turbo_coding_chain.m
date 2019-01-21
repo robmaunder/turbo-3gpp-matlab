@@ -116,7 +116,7 @@ classdef turbo_coding_chain < matlab.System
         
     end
     
-    properties(SetAccess = protected, Hidden)
+    properties(SetAccess = public, Hidden)
         CRC_generator_matrix_TB
         CRC_generator_matrix_CB        
         internal_interleaver_patterns
@@ -257,7 +257,7 @@ classdef turbo_coding_chain < matlab.System
         % step(a); % <- setupImpl executed here
         function setupImpl(obj)
             
-            obj.CRC_generator_matrix_TB = get_crc_generator_matrix(obj.A, obj.CRC_polynomial_TB);
+            obj.CRC_generator_matrix_TB = get_crc_generator_matrix(sum(obj.K_r), obj.CRC_polynomial_TB);
             
             if obj.C > 1
                 obj.CRC_generator_matrix_CB = get_crc_generator_matrix(6144, obj.CRC_polynomial_CB);
@@ -283,17 +283,6 @@ classdef turbo_coding_chain < matlab.System
             end
         end
         
-        % Code executed by the step function. e.g.
-        % a = turbo_coding_chain;
-        % step(a); % <- stepImpl executed here
-        % step(a); % <- stepImpl executed here
-        % reset(a);
-        % step(a); % <- stepImpl executed here
-        % release(a);
-        % step(a); % <- stepImpl executed here
-        function e = stepImpl(obj, a)
-            e = a;
-        end
        
         
         
