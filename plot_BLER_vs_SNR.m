@@ -200,7 +200,7 @@ for R_index = 1:length(R)
                         if ~isequal(a,a_hat)
                             block_error_counts(:,end) = block_error_counts(:,end) + 1;
                         else
-                            block_error_counts(max_iterations < max(iterations_performed),end) = block_error_counts(max_iterations < max(iterations_performed),end) + 1;
+                            block_error_counts(max_iterations < iterations_performed,end) = block_error_counts(max_iterations < iterations_performed,end) + 1;
                         end
                         
                         % Accumulate the number of blocks that have been simulated
